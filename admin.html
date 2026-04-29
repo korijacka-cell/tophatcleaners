@@ -132,30 +132,30 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="config.js"></script>
 <script>
-let supabase = null;
+let sb = null;
 let bookings = [];
 let activeFilter = 'all';
 let searchQuery = '';
 
 // Initialize Supabase
 if (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.url !== 'YOUR_SUPABASE_URL_HERE') {
-  supabase = window.supabase.createClient(window.SUPABASE_CONFIG.url, window.SUPABASE_CONFIG.anonKey);
+  sb = window.supabase.createClient(window.SUPABASE_CONFIG.url, window.SUPABASE_CONFIG.anonKey);
 }
 
 // Auto-show admin if already logged in
 async function init() {
-  if (!supabase) {
+  if (!sb) {
     document.getElementById('loginError').textContent = 'Supabase not configured. Edit config.js with your project URL and anon key.';
     document.getElementById('loginError').classList.add('show');
     return;
   }
-  const { data: { session } } = await supabase.auth.getSession();
+  const { data: { session } } = await sb.auth.getSession();
   if (session) showApp();
 }
 init();
 
 async function tryLogin() {
-  if (!supabase) return;
+  if (!sb) return;
   const email = document.getElementById('emailInput').value.trim();
   const password = document.getElementById('passwordInput').value;
   if (!email || !password) {
@@ -163,7 +163,7 @@ async function tryLogin() {
     document.getElementById('loginError').classList.add('show');
     return;
   }
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  const { error } = await sb.auth.signInWithPassword({ email, password });
   if (error) {
     document.getElementById('loginError').textContent = error.message || 'Invalid email or password';
     document.getElementById('loginError').classList.add('show');
@@ -176,7 +176,7 @@ document.getElementById('passwordInput').addEventListener('keydown', e => { if (
 document.getElementById('emailInput').addEventListener('keydown', e => { if (e.key === 'Enter') tryLogin(); });
 
 async function logout() {
-  if (supabase) await supabase.auth.signOut();
+  if (sb) await sb.auth.signOut();
   location.reload();
 }
 
@@ -187,8 +187,8 @@ async function showApp() {
 }
 
 async function loadBookings() {
-  if (!supabase) return;
-  const { data, error } = await supabase.from('bookings').select('*').order('service_date', { ascending: true });
+  if (!sb) return;
+  const { data, error } = await sb.from('bookings').select('*').order('service_date', { ascending: true });
   if (error) { console.error(error); return; }
   bookings = data || [];
   renderAll();
@@ -266,14 +266,14 @@ document.querySelectorAll('.fpill').forEach(p => {
 document.getElementById('searchBox').addEventListener('input', e => { searchQuery = e.target.value; renderBookings(); });
 
 async function setStatus(id, status) {
-  const { error } = await supabase.from('bookings').update({ status }).eq('id', id);
+  const { error } = await sb.from('bookings').update({ status }).eq('id', id);
   if (error) console.error(error);
   await loadBookings();
 }
 
 async function deleteBooking(id) {
   if (!confirm('Delete this booking? This cannot be undone.')) return;
-  const { error } = await supabase.from('bookings').delete().eq('id', id);
+  const { error } = await sb.from('bookings').delete().eq('id', id);
   if (error) console.error(error);
   await loadBookings();
 }
